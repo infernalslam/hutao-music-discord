@@ -26,6 +26,9 @@ const createConnection = async (client, channelId) => {
 const loadResource = (youtubeURL) => {
   const resource = createAudioResource(ytdl(youtubeURL), {
     inlineVolume: true,
+    filter: "audioonly",
+    fmt: "mp3",
+    encoderArgs: ['-af', 'bass=g=10']
   });
   return resource;
 };
