@@ -12,7 +12,7 @@ const { must } = require("./util/must");
 
 dotenv.config();
 const channelId = process.env.CHANNEL_ID;
-
+let url = null
 const createConnection = async (client, channelId) => {
   const [conn, err] = await must(client.channels.fetch(channelId));
   if (err !== null) {
@@ -60,7 +60,7 @@ const onMesssageCreate = (conn, voiceConnection, player, msg) => {
 
   switch (command) {
     case ".play":
-      const url = arg.join("");
+      url = arg.join("");
       // setup voice connection
       if (voiceConnection == null) {
         voiceConnection = joinVoiceChannel({
@@ -73,8 +73,13 @@ const onMesssageCreate = (conn, voiceConnection, player, msg) => {
       msg.reply(`Now playing ${url}`);
       break;
     case ".stop":
-      stopMusic(voiceConnection, player);
-      msg.reply(`stop ${url}`);
+      if(url){
+        stopMusic(voiceConnection, player);
+        msg.reply(`stop ${url}`);
+        url = null
+      } else{
+        msg.reply(`There is no playing music`);
+      }
       break;
   }
 };
