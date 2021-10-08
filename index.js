@@ -8,8 +8,12 @@ const {
   VoiceConnectionStatus,
 } = require('@discordjs/voice')
 const ytdl = require('ytdl-core')
+const Queue = require('./util/queue')
 
 dotenv.config()
+let textChanelId
+
+const musicQueue = new Queue()
 const channelId = process.env.CHANNEL_ID
 let url = null
 const createConnection = async (client, channelId) => {
@@ -34,11 +38,8 @@ const loadResource = (youtubeURL) => {
 }
 
 const playYoutubeMusic = (voiceConnection, player, url) => {
-  //TODO: loadResource wip: push music to queue
   const resource = loadResource(url)
   resource.volume.setVolume(1)
-
-  voiceConnection.subscribe(player)
   // play and have fun
   player.play(resource)
 }
@@ -52,12 +53,12 @@ const stopMusic = (voiceConnection, player) => {
     voiceConnection.destroy()
 }
 
-const onMesssageCreate = (conn, voiceConnection, player, msg) => {
+const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
   if (msg.author.bot) return
+  textChanelId = msg.channelId
   const { content } = msg
   const command = content.split(' ')[0]
   const arg = content.split(' ').slice(1, content.length)
-
   switch (command) {
     case '.play':
       url = arg.join('')
@@ -69,8 +70,17 @@ const onMesssageCreate = (conn, voiceConnection, player, msg) => {
           adapterCreator: conn.guild.voiceAdapterCreator,
         })
       }
-      playYoutubeMusic(voiceConnection, player, url)
-      msg.reply(`Now playing ${url}`)
+      voiceConnection.subscribe(player)
+      //PLAY
+      if(player.state.status === AudioPlayerStatus.Idle && musicQueue.isEmpty()){
+        playYoutubeMusic(voiceConnection, player, url)
+        msg.reply(`Now playing ${url}`)
+      }
+      //ADD TO QUEUE
+      else {
+        musicQueue.enqueue(url)
+        msg.reply(`Track queued ${url}`)
+      }
       break
     case '.stop':
       if(url){
@@ -106,14 +116,23 @@ const onMesssageCreate = (conn, voiceConnection, player, msg) => {
 
   // create player audio
   const player = createAudioPlayer()
-  player.on(AudioPlayerStatus.Idle, () => {
+  player.on(AudioPlayerStatus.Idle, async () => {
     try {
-      if (player) player.stop()
-      if (
-        voiceConnection &&
-        voiceConnection.state !== VoiceConnectionStatus.Destroyed
-      )
-        voiceConnection.destroy()
+      // if empty
+      if(musicQueue.isEmpty()){
+        if (player) player.stop()
+        if (
+          voiceConnection &&
+          voiceConnection.state !== VoiceConnectionStatus.Destroyed
+        )
+          voiceConnection.destroy()
+      }
+      else{
+        const url = musicQueue.dequeue()
+        playYoutubeMusic(voiceConnection, player, url)
+        const textConn = await createConnection(client, textChanelId)
+        textConn.send(`Now playing ${url}`)
+      }
     } catch (e) {
       console.log('error', e)
     }
@@ -124,6 +143,6 @@ const onMesssageCreate = (conn, voiceConnection, player, msg) => {
   })
 
   client.on('messageCreate', (msg) => {
-    onMesssageCreate(conn, voiceConnection, player, msg)
+    onMesssageCreate(client, conn, voiceConnection, player, msg)
   })
 })()
