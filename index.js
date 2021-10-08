@@ -79,7 +79,7 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
       //ADD TO QUEUE
       else {
         musicQueue.enqueue(url)
-        msg.reply(`Track queued ${url}`)
+        msg.reply(`Queued ${url}`)
       }
       break
     case '.stop':
