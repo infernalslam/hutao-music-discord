@@ -14,22 +14,22 @@ dotenv.config()
 let textChanelId
 
 const musicQueue = new Queue()
-const channelId = process.env.CHANNEL_ID
+const channelId = process.env.VOICE_CHANNEL_ID
 let url = null
 const createConnection = async (client, channelId) => {
-  try{
+  try {
     const conn = await (client.channels.fetch(channelId))
     return conn
   }
-  catch{ err }{
+  catch { err } {
     return null
   }
 }
 
 const loadResource = (youtubeURL) => {
-  const steam = ytdl(youtubeURL,{
-      quality: 'highestaudio',
-      filter: 'audioonly',
+  const steam = ytdl(youtubeURL, {
+    quality: 'highestaudio',
+    filter: 'audioonly',
   })
   const resource = createAudioResource(steam, {
     inlineVolume: true,
@@ -72,7 +72,7 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
       }
       voiceConnection.subscribe(player)
       //PLAY
-      if(player.state.status === AudioPlayerStatus.Idle && musicQueue.isEmpty()){
+      if (player.state.status === AudioPlayerStatus.Idle && musicQueue.isEmpty()) {
         playYoutubeMusic(voiceConnection, player, url)
         msg.reply(`Now playing ${url}`)
       }
@@ -83,11 +83,11 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
       }
       break
     case '.stop':
-      if(url){
+      if (url) {
         stopMusic(voiceConnection, player)
         msg.reply(`stop ${url}`)
         url = null
-      } else{
+      } else {
         msg.reply(`There is no playing music`)
       }
       break
@@ -119,7 +119,7 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
   player.on(AudioPlayerStatus.Idle, async () => {
     try {
       // if empty
-      if(musicQueue.isEmpty()){
+      if (musicQueue.isEmpty()) {
         if (player) player.stop()
         if (
           voiceConnection &&
@@ -127,7 +127,7 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
         )
           voiceConnection.destroy()
       }
-      else{
+      else {
         const url = musicQueue.dequeue()
         playYoutubeMusic(voiceConnection, player, url)
         const textConn = await createConnection(client, textChanelId)
