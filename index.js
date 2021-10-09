@@ -21,7 +21,7 @@ const createConnection = async (client, channelId) => {
     const conn = await (client.channels.fetch(channelId))
     return conn
   }
-  catch { err } {
+  catch (err) {
     return null
   }
 }
@@ -60,37 +60,37 @@ const onMesssageCreate = async (client, conn, voiceConnection, player, msg) => {
   const command = content.split(' ')[0]
   const arg = content.split(' ').slice(1, content.length)
   switch (command) {
-    case '.play':
-      url = arg.join('')
-      // setup voice connection
-      if (voiceConnection == null) {
-        voiceConnection = joinVoiceChannel({
-          channelId: conn.id,
-          guildId: conn.guild.id,
-          adapterCreator: conn.guild.voiceAdapterCreator,
-        })
-      }
-      voiceConnection.subscribe(player)
-      //PLAY
-      if (player.state.status === AudioPlayerStatus.Idle && musicQueue.isEmpty()) {
-        playYoutubeMusic(voiceConnection, player, url)
-        msg.reply(`Now playing ${url}`)
-      }
-      //ADD TO QUEUE
-      else {
-        musicQueue.enqueue(url)
-        msg.reply(`Queued ${url}`)
-      }
-      break
-    case '.stop':
-      if (url) {
-        stopMusic(voiceConnection, player)
-        msg.reply(`stop ${url}`)
-        url = null
-      } else {
-        msg.reply(`There is no playing music`)
-      }
-      break
+  case '.play':
+    url = arg.join('')
+    // setup voice connection
+    if (voiceConnection == null) {
+      voiceConnection = joinVoiceChannel({
+        channelId: conn.id,
+        guildId: conn.guild.id,
+        adapterCreator: conn.guild.voiceAdapterCreator,
+      })
+    }
+    voiceConnection.subscribe(player)
+    //PLAY
+    if (player.state.status === AudioPlayerStatus.Idle && musicQueue.isEmpty()) {
+      playYoutubeMusic(voiceConnection, player, url)
+      msg.reply(`Now playing ${url}`)
+    }
+    //ADD TO QUEUE
+    else {
+      musicQueue.enqueue(url)
+      msg.reply(`Queued ${url}`)
+    }
+    break
+  case '.stop':
+    if (url) {
+      stopMusic(voiceConnection, player)
+      msg.reply(`stop ${url}`)
+      url = null
+    } else {
+      msg.reply('There is no playing music')
+    }
+    break
   }
 }
 
