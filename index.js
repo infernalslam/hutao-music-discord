@@ -26,6 +26,7 @@ client.login(process.env.TOKEN)
 
 
 const channelID = process.env.CHANNEL_ID
+let queue = []
 
 client.on('ready', async () => {
   console.log('ready')
@@ -37,6 +38,12 @@ client.on('messageCreate', msg => {
 
   switch (args) {
     case `${perfix}p`: playMusic(msg)
+      // if (queue.length() === 0) {
+      //   playMusic(msg)
+      //   removeQueue()
+      // } else {
+      //   addQueue(msg)
+      // }
     case `${perfix}s`: break
     case `${perfix}e`: break
   }
@@ -59,20 +66,39 @@ const voiceConnection = (msg) => {
     const voiceInstance = joinVoiceChannel(confJoinVoice)
 
 
-    const resource = loadResourceMusic('https://www.youtube.com/watch?v=HYsz1hP0BFo')
-    resource.volume.setVolume(1)
-    
+    const URL = getQueue()
+    let resource
+    if (URL) {
+      resource = loadResourceMusic(URL)
+      resource.volume.setVolume(1)
+      voiceInstance.subscribe(player)
+      player.play(resource)
+      removeQueue()
+    } else {
+      addQueue(msg.content)
+    }
 
-    // const player = createAudioPlayer()
-    voiceInstance.subscribe(player)
-    player.play(resource)
+    player.on(AudioPlayerStatus.Idle, () => {
+      console.log('Idle')
+      const URL = getQueue()
+      if (URL) {
+        console.log('continue...')
+        resource = loadResourceMusic(URL)
+        resource.volume.setVolume(1)
+        player.play(resource)
+      } else {
+        console.log('destory...')
+        player.stop()
+        voiceInstance.destroy()
+      }
+    })
 
 
     // handle events music
-    handleEventMusic(player, voiceInstance)
+    // handleEventMusic(player, voiceInstance)
 
     // TODO:
-    msg.channel.send("pong!")
+    // msg.channel.send("pong!")
   })
 }
 
@@ -87,20 +113,35 @@ const loadResourceMusic = (youtubeURL) => {
 const handleEventMusic = (player, voiceInstance) => {
   player.on(AudioPlayerStatus.Playing, () => {
     console.log('Playing')
+    
   })
 
   player.on(AudioPlayerStatus.Idle, () => {
-    console.log('Idel')
-  })
-  // player.on(AudioPlayerStatus.Idle, () => {
-  //   console.log('hahahah')
-  //   try {
-  //     player.stop()
-  //     voiceInstance.destroy()
-  //   } catch(err) {
-  //     player.stop()
-  //     console.log('Error Hutao :', err)
-  //   }
+    try {
+      player.stop()
+      voiceInstance.destroy()
+    } catch(err) {
+      player.stop()
+      console.log('Error Hutao :', err)
+    }
 
-  // })
+  })
+}
+
+const getQueue = () => {
+  return queue[0]
+}
+
+const removeQueue = () => {
+  queue.shift()
+}
+
+const addQueue = (query) => {
+  // TODO: query youtube
+  const youtubeURL = getYoutubeURL(query)
+  queue.push(youtubeURL)
+}
+
+const getYoutubeURL = (query) => {
+  return 'https://www.youtube.com/watch?v=hazLhv9bRNA'
 }
